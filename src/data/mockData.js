@@ -8,6 +8,12 @@
  * dibujados sobre un campo real al sureste de la ciudad de Corrientes.
  */
 
+export const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+// Mes actual de la campaña (la demo está ambientada en junio de 2026).
+// Divide el tramo "real" (sólido) del "proyectado" (punteado) en los gráficos.
+export const HOY_MES = 5 // Jun
+
 // ---------------------------------------------------------------------------
 // Catálogo de cultivos: color en el mapa + precio de referencia (USD / tn)
 // ---------------------------------------------------------------------------
@@ -30,12 +36,14 @@ export const mapCenter = [-27.52, -58.7]
 export const mapZoom = 14
 
 // ---------------------------------------------------------------------------
-// Parcelas (datos base). Los campos económicos derivados se calculan abajo.
+// Parcelas (datos base). Los campos derivados se calculan más abajo.
 //
-// dataReal       → seguimiento mensual ya ocurrido (línea continua del gráfico)
-// dataProyectada → estimación desde "HOY" al cierre de campaña (línea punteada)
-//   El primer punto de dataProyectada repite el último de dataReal para que
-//   ambos tramos se conecten visualmente en la marca "HOY".
+// rindeTnHa     → rinde objetivo / plan a inicio de campaña (tn/ha)
+// rindeRealTnHa → rinde esperado HOY según cómo viene el cultivo (tn/ha)
+// escenario     → factores y probabilidades para las 3 proyecciones a cosecha
+//   opt/pes     → multiplican el rinde esperado para el techo / piso
+//   priceHi/Lo  → variación de precio en cada escenario
+//   probs       → probabilidad (%) de cada escenario (suman 100)
 // ---------------------------------------------------------------------------
 const baseParcels = [
   {
@@ -43,30 +51,19 @@ const baseParcels = [
     name: 'Lote Norte',
     cultivo: 'soja',
     hectareas: 142,
-    costoHa: 268, // USD / ha
-    rindeTnHa: 3.9, // tn / ha (rendimiento proyectado a inicio de campaña)
-    rindeRealTnHa: 4.0, // tn / ha medido/estimado a la fecha
-    objetivoHa: 980, // margen objetivo de la campaña (USD / ha)
-    siembra: '2025-12-01',
-    cosecha: '2026-06-25',
-    progreso: 90, // % de avance de la campaña actual
+    costoHa: 268,
+    rindeTnHa: 3.9,
+    rindeRealTnHa: 4.0,
+    objetivoHa: 980,
+    siembra: '2026-03-05',
+    cosecha: '2026-09-20',
+    progreso: 45,
+    escenario: { opt: 1.12, pes: 0.85, priceHi: 1.1, priceLo: 0.92, probs: { base: 55, opt: 30, pes: 15 } },
     coordinates: [
       [-27.5005, -58.7065],
       [-27.5005, -58.6935],
       [-27.5135, -58.6935],
       [-27.5135, -58.7065],
-    ],
-    dataReal: [
-      { mes: 'Dic', ingreso: 150000, rendimiento: 3.4 },
-      { mes: 'Ene', ingreso: 160000, rendimiento: 3.6 },
-      { mes: 'Feb', ingreso: 169000, rendimiento: 3.7 },
-      { mes: 'Mar', ingreso: 178000, rendimiento: 3.85 },
-      { mes: 'Abr', ingreso: 185000, rendimiento: 3.95 },
-      { mes: 'May', ingreso: 189000, rendimiento: 4.0 },
-    ],
-    dataProyectada: [
-      { mes: 'May', ingreso: 189000, rendimiento: 4.0 },
-      { mes: 'Jun', ingreso: 193000, rendimiento: 4.05 },
     ],
   },
   {
@@ -76,28 +73,17 @@ const baseParcels = [
     hectareas: 168,
     costoHa: 245,
     rindeTnHa: 4.1,
-    rindeRealTnHa: 3.42,
-    objetivoHa: 700, // objetivo exigente → genera desvío >10% (alerta de campaña)
-    siembra: '2026-01-15',
-    cosecha: '2026-07-20',
-    progreso: 76,
+    rindeRealTnHa: 3.42, // viene por debajo del plan (falta de lluvias)
+    objetivoHa: 700, // objetivo exigente → desvío >10% (alerta de campaña)
+    siembra: '2026-02-10',
+    cosecha: '2026-08-25',
+    progreso: 58,
+    escenario: { opt: 1.1, pes: 0.78, priceHi: 1.06, priceLo: 0.86, probs: { base: 40, opt: 12, pes: 48 } },
     coordinates: [
       [-27.5265, -58.7065],
       [-27.5265, -58.6935],
       [-27.5395, -58.6935],
       [-27.5395, -58.7065],
-    ],
-    dataReal: [
-      { mes: 'Ene', ingreso: 130000, rendimiento: 4.0 },
-      { mes: 'Feb', ingreso: 126000, rendimiento: 3.9 },
-      { mes: 'Mar', ingreso: 120000, rendimiento: 3.75 },
-      { mes: 'Abr', ingreso: 115000, rendimiento: 3.6 },
-      { mes: 'May', ingreso: 112000, rendimiento: 3.5 },
-      { mes: 'Jun', ingreso: 110000, rendimiento: 3.42 },
-    ],
-    dataProyectada: [
-      { mes: 'Jun', ingreso: 110000, rendimiento: 3.42 },
-      { mes: 'Jul', ingreso: 108000, rendimiento: 3.38 },
     ],
   },
   {
@@ -109,25 +95,15 @@ const baseParcels = [
     rindeTnHa: 2.7,
     rindeRealTnHa: 2.85,
     objetivoHa: 700,
-    siembra: '2025-11-10',
-    cosecha: '2026-04-15',
-    progreso: 100,
+    siembra: '2026-01-12',
+    cosecha: '2026-07-15',
+    progreso: 77,
+    escenario: { opt: 1.13, pes: 0.88, priceHi: 1.09, priceLo: 0.93, probs: { base: 58, opt: 27, pes: 15 } },
     coordinates: [
       [-27.5135, -58.6935],
       [-27.5135, -58.6805],
       [-27.5265, -58.6805],
       [-27.5265, -58.6935],
-    ],
-    dataReal: [
-      { mes: 'Nov', ingreso: 92000, rendimiento: 2.4 },
-      { mes: 'Dic', ingreso: 98000, rendimiento: 2.55 },
-      { mes: 'Ene', ingreso: 104000, rendimiento: 2.68 },
-      { mes: 'Feb', ingreso: 106000, rendimiento: 2.78 },
-    ],
-    dataProyectada: [
-      { mes: 'Feb', ingreso: 106000, rendimiento: 2.78 },
-      { mes: 'Mar', ingreso: 108000, rendimiento: 2.82 },
-      { mes: 'Abr', ingreso: 109000, rendimiento: 2.85 },
     ],
   },
   {
@@ -139,26 +115,15 @@ const baseParcels = [
     rindeTnHa: 3.1,
     rindeRealTnHa: 3.02,
     objetivoHa: 520,
-    siembra: '2025-06-15',
-    cosecha: '2025-12-05',
-    progreso: 100,
+    siembra: '2026-05-08',
+    cosecha: '2026-11-20',
+    progreso: 13,
+    escenario: { opt: 1.1, pes: 0.84, priceHi: 1.07, priceLo: 0.9, probs: { base: 50, opt: 22, pes: 28 } },
     coordinates: [
       [-27.5135, -58.7195],
       [-27.5135, -58.7065],
       [-27.5265, -58.7065],
       [-27.5265, -58.7195],
-    ],
-    dataReal: [
-      { mes: 'Jun', ingreso: 78000, rendimiento: 2.7 },
-      { mes: 'Jul', ingreso: 82000, rendimiento: 2.85 },
-      { mes: 'Ago', ingreso: 86000, rendimiento: 2.95 },
-      { mes: 'Sep', ingreso: 89000, rendimiento: 3.02 },
-    ],
-    dataProyectada: [
-      { mes: 'Sep', ingreso: 89000, rendimiento: 3.02 },
-      { mes: 'Oct', ingreso: 90500, rendimiento: 3.06 },
-      { mes: 'Nov', ingreso: 91500, rendimiento: 3.08 },
-      { mes: 'Dic', ingreso: 92256, rendimiento: 3.1 },
     ],
   },
   {
@@ -166,33 +131,27 @@ const baseParcels = [
     name: 'Lote Central',
     cultivo: 'barbecho',
     hectareas: 88,
-    costoHa: 95, // mantenimiento / barbecho
+    costoHa: 95,
     rindeTnHa: 0,
     rindeRealTnHa: 0,
     objetivoHa: 0,
     siembra: null,
     cosecha: null,
     progreso: 0,
+    escenario: null,
     coordinates: [
       [-27.5135, -58.7065],
       [-27.5135, -58.6935],
       [-27.5265, -58.6935],
       [-27.5265, -58.7065],
     ],
-    dataReal: [],
-    dataProyectada: [],
   },
 ]
 
+const monthIndex = (iso) => (iso ? Number(iso.split('-')[1]) - 1 : null)
+
 /**
  * Enriquece cada parcela con sus métricas económicas derivadas.
- *  - ingresoTotal  = precio cultivo × rinde × hectáreas
- *  - costoTotal    = costo/ha × hectáreas
- *  - rentabilidad  = ingreso − costo (USD estimados)
- *  - objetivo      = margen objetivo × hectáreas
- *  - desviacionPct = qué tan lejos está la rentabilidad del objetivo
- *  - rindeDiffPct  = rinde real vs. proyectado (%)
- *  - status        = 'rentable' (cumple objetivo) | 'desvio' (por debajo)
  */
 function enrich(p) {
   const crop = cropCatalog[p.cultivo]
@@ -210,14 +169,14 @@ function enrich(p) {
         ? -100
         : 0
   const rindeDiffPct =
-    p.rindeTnHa > 0
-      ? Math.round(((p.rindeRealTnHa - p.rindeTnHa) / p.rindeTnHa) * 1000) / 10
-      : null
+    p.rindeTnHa > 0 ? Math.round(((p.rindeRealTnHa - p.rindeTnHa) / p.rindeTnHa) * 1000) / 10 : null
 
   return {
     ...p,
     crop,
     precioTn: crop.priceTn,
+    siembraMes: monthIndex(p.siembra),
+    cosechaMes: monthIndex(p.cosecha),
     ingresoHa: Math.round(ingresoHa),
     ingresoTotal,
     costoTotal,
@@ -240,29 +199,28 @@ export const parcelByCrop = parcels.reduce((acc, p) => {
   return acc
 }, {})
 
-// Cultivos activos (para el selector del gráfico real vs. proyectado)
+// Cultivos activos (para el selector del gráfico de proyección)
 export const activeCrops = parcels
   .filter((p) => p.cultivo !== 'barbecho')
   .map((p) => ({ key: p.cultivo, label: p.crop.label, color: p.crop.color }))
 
 // ---------------------------------------------------------------------------
-// Proyección mensual (12 meses) — ingresos vs. costos estimados (USD)
-// Picos coherentes con las cosechas: trigo (dic), girasol (feb–abr),
-// soja + maíz (jun–jul).
+// Proyección mensual del establecimiento (Ene–Dic) — ingresos vs. costos (USD)
+// Costos altos al sembrar (inversión); ingresos al cosechar cada cultivo.
 // ---------------------------------------------------------------------------
 export const monthlyProjection = [
-  { mes: 'Jul', ingresos: 12000, costos: 6000 },
-  { mes: 'Ago', ingresos: 8000, costos: 4000 },
-  { mes: 'Sep', ingresos: 6000, costos: 14000 },
-  { mes: 'Oct', ingresos: 9000, costos: 9000 },
-  { mes: 'Nov', ingresos: 14000, costos: 18000 },
-  { mes: 'Dic', ingresos: 78000, costos: 11000 },
-  { mes: 'Ene', ingresos: 22000, costos: 22000 },
-  { mes: 'Feb', ingresos: 64000, costos: 9000 },
-  { mes: 'Mar', ingresos: 41000, costos: 8000 },
-  { mes: 'Abr', ingresos: 95000, costos: 7000 },
-  { mes: 'May', ingresos: 38000, costos: 12000 },
-  { mes: 'Jun', ingresos: 134000, costos: 15000 },
+  { mes: 'Ene', ingresos: 4000, costos: 16000 }, // siembra girasol
+  { mes: 'Feb', ingresos: 3000, costos: 19000 }, // siembra maíz
+  { mes: 'Mar', ingresos: 3000, costos: 18000 }, // siembra soja
+  { mes: 'Abr', ingresos: 5000, costos: 12000 },
+  { mes: 'May', ingresos: 6000, costos: 17000 }, // siembra trigo
+  { mes: 'Jun', ingresos: 8000, costos: 11000 },
+  { mes: 'Jul', ingresos: 95000, costos: 7000 }, // cosecha girasol
+  { mes: 'Ago', ingresos: 120000, costos: 6000 }, // cosecha maíz
+  { mes: 'Sep', ingresos: 140000, costos: 6000 }, // cosecha soja
+  { mes: 'Oct', ingresos: 30000, costos: 5000 },
+  { mes: 'Nov', ingresos: 92000, costos: 8000 }, // cosecha trigo
+  { mes: 'Dic', ingresos: 12000, costos: 6000 },
 ]
 
 // ---------------------------------------------------------------------------
@@ -303,22 +261,16 @@ export function getCropDistribution() {
 
 // ---------------------------------------------------------------------------
 // Alerta de campaña: ¿hay algún lote ACTIVO con desvío > 10%?
-// (El barbecho se excluye: no tiene campaña activa.)
 // ---------------------------------------------------------------------------
 export function getCampaignAlert(threshold = -10) {
   const active = parcels.filter((p) => p.cultivo !== 'barbecho')
-  const worst = active.reduce(
-    (min, p) => (p.desviacionPct < min.desviacionPct ? p : min),
-    active[0],
-  )
-  if (worst && worst.desviacionPct < threshold) {
-    return { status: 'desvio', parcel: worst }
-  }
+  const worst = active.reduce((min, p) => (p.desviacionPct < min.desviacionPct ? p : min), active[0])
+  if (worst && worst.desviacionPct < threshold) return { status: 'desvio', parcel: worst }
   return { status: 'ok' }
 }
 
 // ---------------------------------------------------------------------------
-// Ranking de lotes por rentabilidad / ha (incluye rinde real vs proyectado)
+// Ranking de lotes por rentabilidad / ha
 // ---------------------------------------------------------------------------
 export function getRanking() {
   return [...parcels].sort((a, b) => b.rentabilidadHa - a.rentabilidadHa)
@@ -343,33 +295,96 @@ export function getNextHarvest(refDate = new Date()) {
 }
 
 // ---------------------------------------------------------------------------
-// Serie real + proyectada de un cultivo, lista para el gráfico.
-// Devuelve filas { mes, real, proj } para la métrica pedida ('ingreso' | 'rendimiento')
-// y el mes que marca "HOY" (frontera entre real y proyección).
+// PROYECCIÓN POR CULTIVO (Ene–Dic) con 3 escenarios.
+//
+// Modelo agronómico simple e interpretable:
+//  - El rinde (tn/ha) CRECE desde la siembra (0) hasta la cosecha (rinde final),
+//    siguiendo una curva de crecimiento suave (smoothstep).
+//  - Hasta HOY es dato real (línea continua). Desde HOY se abre en 3 escenarios
+//    (base / optimista / pesimista) que llegan a su rinde final en la cosecha.
+//  - Ingreso = rinde × hectáreas × precio. En los escenarios también varía el
+//    precio (mejor/peor), por eso la banda de ingresos es más amplia.
+//
+// Devuelve filas { mes, real, base, rango:[piso, techo] } para la métrica pedida
+// ('ingreso' | 'rendimiento') + los meses clave y las probabilidades.
 // ---------------------------------------------------------------------------
-export function getRealVsProjected(cropKey, metric = 'ingreso') {
+const smoothstep = (x) => {
+  const t = Math.min(1, Math.max(0, x))
+  return t * t * (3 - 2 * t)
+}
+
+export function getProjection(cropKey, metric = 'ingreso') {
   const p = parcelByCrop[cropKey]
-  if (!p) return { rows: [], hoyMes: null }
+  if (!p || p.siembraMes == null) {
+    return { rows: [], siembraMes: null, hoyMes: HOY_MES, cosechaMes: null, escenarios: null, finales: null }
+  }
 
-  const real = p.dataReal || []
-  const proj = p.dataProyectada || []
-  const hoyMes = proj.length ? proj[0].mes : real.length ? real[real.length - 1].mes : null
+  const { siembraMes, cosechaMes, hectareas, precioTn } = p
+  const span = Math.max(1, cosechaMes - siembraMes)
+  const isMoney = metric === 'ingreso'
 
-  // Orden de meses: todos los reales + los proyectados (sin repetir la frontera)
-  const projExtra = proj.filter((d) => !real.some((r) => r.mes === d.mes))
-  const meses = [...real.map((d) => d.mes), ...projExtra.map((d) => d.mes)]
+  const progAt = (m) => smoothstep((m - siembraMes) / span)
+  const eHoy = progAt(HOY_MES)
 
-  const rows = meses.map((mes) => {
-    const r = real.find((d) => d.mes === mes)
-    const j = proj.find((d) => d.mes === mes)
-    return {
-      mes,
-      real: r ? r[metric] : null,
-      proj: j ? j[metric] : null,
+  // Rinde final de cada escenario (tn/ha)
+  const finalBase = p.rindeRealTnHa
+  const finalOpt = Math.round(finalBase * p.escenario.opt * 100) / 100
+  const finalPes = Math.round(finalBase * p.escenario.pes * 100) / 100
+  const rindeHoy = finalBase * eHoy
+
+  // factor de avance de la divergencia entre HOY y cosecha (0 en HOY, 1 en cosecha)
+  const fanAt = (m) => {
+    const e = progAt(m)
+    return eHoy >= 1 ? 1 : Math.min(1, Math.max(0, (e - eHoy) / (1 - eHoy)))
+  }
+
+  const yieldScenario = (finalY, m) => rindeHoy + (finalY - rindeHoy) * fanAt(m)
+  const priceMult = (target, m) => 1 + (target - 1) * fanAt(m)
+
+  const toMoney = (yieldHa, pMult) => Math.round(yieldHa * hectareas * precioTn * pMult)
+  const toYield = (yieldHa) => Math.round(yieldHa * 100) / 100
+
+  const rows = MONTHS.map((mes, m) => {
+    const row = { mes, real: null, base: null, rango: null }
+    if (m < siembraMes || m > cosechaMes) return row
+
+    if (m <= HOY_MES) {
+      const y = finalBase * progAt(m)
+      row.real = isMoney ? toMoney(y, 1) : toYield(y)
     }
+    if (m >= HOY_MES) {
+      const yb = yieldScenario(finalBase, m)
+      const yo = yieldScenario(finalOpt, m)
+      const yp = yieldScenario(finalPes, m)
+      if (isMoney) {
+        row.base = toMoney(yb, 1)
+        row.rango = [toMoney(yp, priceMult(p.escenario.priceLo, m)), toMoney(yo, priceMult(p.escenario.priceHi, m))]
+      } else {
+        row.base = toYield(yb)
+        row.rango = [toYield(yp), toYield(yo)]
+      }
+      if (m === HOY_MES) row.real = isMoney ? toMoney(rindeHoy, 1) : toYield(rindeHoy)
+    }
+    return row
   })
 
-  return { rows, hoyMes }
+  const finalesYield = { base: finalBase, opt: finalOpt, pes: finalPes }
+  const finales = isMoney
+    ? {
+        base: toMoney(finalBase, 1),
+        opt: toMoney(finalOpt, p.escenario.priceHi),
+        pes: toMoney(finalPes, p.escenario.priceLo),
+      }
+    : finalesYield
+
+  return {
+    rows,
+    siembraMes,
+    hoyMes: HOY_MES,
+    cosechaMes,
+    escenarios: p.escenario.probs, // { base, opt, pes } en %
+    finales,
+  }
 }
 
 // ---------------------------------------------------------------------------

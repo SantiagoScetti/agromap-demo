@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Polygon, Tooltip, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import {
@@ -12,6 +12,8 @@ import {
   formatUSD,
 } from '../data/mockData'
 import ParcelPanel from '../components/ParcelPanel'
+import Toast from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { Move, RotateCw, Spline, Pencil, Check, X } from '../components/Icons'
 
 // Estilo de cada polígono según el modo de color activo
@@ -31,31 +33,6 @@ function styleFor(parcel, mode, selected, editing) {
     opacity: 1,
     dashArray: editing ? '6 6' : undefined,
   }
-}
-
-/* Controla los modos de edición de leaflet-geoman según el estado de React */
-function GeomanController({ editing, subMode }) {
-  const map = useMap()
-
-  useEffect(() => {
-    if (!map?.pm) return
-    const pm = map.pm
-    const disableAll = () => {
-      if (pm.globalEditModeEnabled?.()) pm.disableGlobalEditMode()
-      if (pm.globalDragModeEnabled?.()) pm.disableGlobalDragMode()
-      if (pm.globalRotateModeEnabled?.()) pm.disableGlobalRotateMode()
-    }
-
-    disableAll()
-    if (editing) {
-      if (subMode === 'move') pm.enableGlobalDragMode()
-      else if (subMode === 'rotate') pm.enableGlobalRotateMode()
-      else pm.enableGlobalEditMode({ allowSelfIntersection: false })
-    }
-    return disableAll
-  }, [map, editing, subMode])
-
-  return null
 }
 
 // Switch ver por cultivo / rentabilidad
@@ -175,10 +152,65 @@ export default function MapView() {
   const [geometries, setGeometries] = useState(() =>
     Object.fromEntries(parcels.map((p) => [p.id, p.coordinates])),
   )
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [toast, setToast] = useState(null)
 
   const layerRefs = useRef({})
   const editingRef = useRef(editing)
   editingRef.current = editing
+  const toastTimer = useRef(null)
+
+  // Aplica el modo de geoman capa por capa (más confiable que los modos globales,
+  // sobre todo para la rotación). Se re-ejecuta al cambiar de submodo o remontar.
+  useEffect(() => {
+    const layers = Object.values(layerRefs.current).filter(Boolean)
+    const disableLayer = (l) => {
+      try {
+        l.pm?.disable?.()
+      } catch {
+        /* noop */
+      }
+      try {
+        l.pm?.disableLayerDrag?.()
+      } catch {
+        /* noop */
+      }
+      try {
+        l.pm?.disableRotate?.()
+      } catch {
+        /* noop */
+      }
+    }
+
+    layers.forEach(disableLayer)
+    if (editing) {
+      layers.forEach((l) => {
+        if (!l.pm) return
+        try {
+          if (subMode === 'move') l.pm.enableLayerDrag()
+          else if (subMode === 'rotate') l.pm.enableRotate()
+          else l.pm.enable({ allowSelfIntersection: false, draggable: false })
+        } catch {
+          /* noop */
+        }
+      })
+    }
+    return () => layers.forEach(disableLayer)
+  }, [editing, subMode, geomKey])
+
+  useEffect(() => () => clearTimeout(toastTimer.current), [])
+
+  const showToast = (message, tone = 'success') => {
+    setToast({ message, tone })
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 3200)
+    // feedback háptico en mobile
+    try {
+      navigator.vibrate?.(10)
+    } catch {
+      /* noop */
+    }
+  }
 
   const startEditing = () => {
     setSelected(null)
@@ -187,6 +219,7 @@ export default function MapView() {
   }
 
   const handleCancel = () => {
+    setConfirmCancel(false)
     setEditing(false)
     setGeomKey((k) => k + 1) // remonta los polígonos desde la geometría original
   }
@@ -205,6 +238,7 @@ export default function MapView() {
     })
     setEditing(false)
     setGeomKey((k) => k + 1)
+    showToast('Cambios guardados con éxito')
   }
 
   return (
@@ -224,8 +258,6 @@ export default function MapView() {
           maxZoom={19}
         />
 
-        <GeomanController editing={editing} subMode={subMode} />
-
         {parcels.map((p) => {
           const isSelected = selected?.id === p.id
           return (
@@ -242,8 +274,17 @@ export default function MapView() {
                 },
               }}
             >
-              {!editing && (
-                <Tooltip direction="center" className="agro-tooltip" sticky>
+              {editing ? (
+                <Tooltip
+                  key="edit-label"
+                  permanent
+                  direction="center"
+                  className="agro-tooltip agro-edit-label"
+                >
+                  {p.name}
+                </Tooltip>
+              ) : (
+                <Tooltip key="hover" direction="center" className="agro-tooltip" sticky>
                   <div className="text-center">
                     <div className="font-bold">{p.name}</div>
                     <div className="text-[11px] opacity-80">
@@ -304,13 +345,29 @@ export default function MapView() {
           subMode={subMode}
           onSubMode={setSubMode}
           onSave={handleSave}
-          onCancel={handleCancel}
+          onCancel={() => setConfirmCancel(true)}
         />
       )}
 
       {/* Panel de detalle */}
       {selected && !editing && (
         <ParcelPanel parcel={selected} onClose={() => setSelected(null)} />
+      )}
+
+      {/* Confirmación al cancelar edición */}
+      <ConfirmDialog
+        open={confirmCancel}
+        title="¿Cancelar la edición?"
+        message="Se descartarán los cambios de geometría que hiciste en las parcelas. Esta acción no se puede deshacer."
+        confirmLabel="Descartar cambios"
+        cancelLabel="Seguir editando"
+        onConfirm={handleCancel}
+        onCancel={() => setConfirmCancel(false)}
+      />
+
+      {/* Toast de feedback */}
+      {toast && (
+        <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} />
       )}
     </div>
   )

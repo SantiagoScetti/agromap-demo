@@ -36,6 +36,29 @@ import { Sprout, Coins, Package, TrendingUp, Clock } from '../components/Icons'
 
 const totals = getTotals()
 const cropDist = getCropDistribution()
+
+// Etiqueta de % centrada sobre la banda del donut
+const RADIAN = Math.PI / 180
+function renderDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
+  if (percent < 0.06) return null // omite tajadas muy chicas para no saturar
+  const r = innerRadius + (outerRadius - innerRadius) * 0.5
+  const x = cx + r * Math.cos(-midAngle * RADIAN)
+  const y = cy + r * Math.sin(-midAngle * RADIAN)
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#0a140d"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={800}
+      style={{ pointerEvents: 'none' }}
+    >
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  )
+}
 const barData = parcels.map((p) => ({
   name: p.name.replace('Lote ', ''),
   costo: p.costoTotal,
@@ -269,6 +292,8 @@ export default function Dashboard() {
                   stroke={chart.bg}
                   strokeWidth={2}
                   animationDuration={900}
+                  label={renderDonutLabel}
+                  labelLine={false}
                 >
                   {cropDist.map((entry) => (
                     <Cell key={entry.cultivo} fill={entry.color} />

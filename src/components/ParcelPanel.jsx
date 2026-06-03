@@ -27,9 +27,13 @@ function PanelInner({ parcel, onClose, headerHandlers, showGrip }) {
   const desv = parcel.desviacionPct
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Zona de drag (grip + header) en mobile */}
-      <div {...headerHandlers} className={showGrip ? 'cursor-grab active:cursor-grabbing' : ''}>
+    <div className="flex min-h-0 w-full flex-1 flex-col">
+      {/* Zona de drag (grip + header) en mobile. touch-none solo acá para que
+          el gesto de arrastre no haga scroll, pero el contenido sí pueda scrollear. */}
+      <div
+        {...headerHandlers}
+        className={showGrip ? 'cursor-grab touch-none active:cursor-grabbing' : ''}
+      >
         {showGrip && (
           <div className="flex justify-center pt-2.5">
             <span className="h-1.5 w-12 rounded-full bg-agro-border" />
@@ -63,8 +67,12 @@ function PanelInner({ parcel, onClose, headerHandlers, showGrip }) {
         </div>
       </div>
 
-      {/* Contenido scrollable */}
-      <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
+      {/* Contenido scrollable (pan-y permite scroll táctil; safe-area abajo
+          para que la última tarjeta no quede tapada en mobile) */}
+      <div
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5"
+        style={{ touchAction: 'pan-y', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
+      >
         <div
           className="flex items-center justify-between rounded-xl border px-3 py-2.5"
           style={{ borderColor: `${statusColor}55`, backgroundColor: `${statusColor}14` }}
@@ -218,11 +226,10 @@ function BottomSheet({ parcel, onClose }) {
       <aside
         role="dialog"
         aria-label={`Detalle de ${parcel.name}`}
-        className="absolute inset-x-0 bottom-0 z-[1000] flex max-h-[85dvh] flex-col rounded-t-3xl border-t border-agro-border bg-agro-card shadow-card"
+        className="absolute inset-x-0 bottom-0 z-[1000] flex max-h-[88%] flex-col rounded-t-3xl border-t border-agro-border bg-agro-card shadow-card"
         style={{
           transform: `translateY(${translateY})`,
           transition: dragging ? 'none' : 'transform 360ms cubic-bezier(0.22,1,0.36,1)',
-          touchAction: 'none',
         }}
       >
         <PanelInner

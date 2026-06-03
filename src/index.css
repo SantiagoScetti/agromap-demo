@@ -71,7 +71,33 @@ html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* La app es de uso "tipo app": evitamos la selección accidental de texto
+       y el menú contextual al mantener presionado en mobile. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
+
+  /* Reactivamos la selección donde tiene sentido (campos editables) */
+  input,
+  textarea,
+  select,
+  [contenteditable='true'] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Recharts: sin contorno/cuadrado feo al hacer foco o seleccionar un segmento */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface,
+.recharts-surface:focus,
+.recharts-sector,
+.recharts-sector:focus,
+.recharts-layer:focus,
+.recharts-pie-sector:focus {
+  outline: none;
 }
 
 /* ---- Animated theme switch (only while toggling, reduced-motion safe) ---- */
@@ -153,6 +179,16 @@ html {
 }
 .leaflet-tooltip.agro-tooltip::before {
   display: none;
+}
+
+/* Etiqueta con el nombre del lote mientras se edita (centrada en el polígono) */
+.leaflet-tooltip.agro-edit-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-agro-accent);
+  border-color: var(--color-agro-accent);
+  background: color-mix(in srgb, var(--color-agro-bg) 85%, transparent);
+  pointer-events: none;
 }
 
 /* ---- Leaflet-geoman: tint vertex / edit markers with the accent ---- */
