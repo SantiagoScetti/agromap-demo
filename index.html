@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/wheat.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#060a0f" />
+    <meta
+      name="description"
+      content="AgroMap — plataforma SaaS de gestión agropecuaria. Mapeo satelital de parcelas, rentabilidad y proyecciones."
+    />
+    <title>AgroMap · Gestión agropecuaria inteligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Aplica el tema guardado antes del primer paint (evita parpadeo) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('agromap-theme');
+          var theme = t === 'light' || t === 'dark' ? t : 'dark';
+          document.documentElement.classList.add(theme);
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

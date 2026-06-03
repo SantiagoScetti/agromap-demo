@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/*
+  AgroMap design tokens (Tailwind v4 — CSS-first theme).
+  These generate utilities like `bg-agro-bg`, `text-agro-accent`, `border-agro-border`, etc.
+
+  Light/dark theming: utilities compile to `var(--color-agro-*)`. The defaults
+  below are the DARK theme; `html.light` re-defines the same variables, so every
+  `bg-agro-*` / `text-agro-*` class flips automatically — no component edits.
+*/
+@theme {
+  --color-agro-bg: #060a0f;
+  --color-agro-surface: #0a1410;
+  --color-agro-card: #0d1a14;
+  --color-agro-card-soft: #0f211a;
+  --color-agro-border: #1b3328;
+  --color-agro-border-soft: #14241c;
+  --color-agro-accent: #00e676;
+  --color-agro-accent-dim: #00b85f;
+  --color-agro-danger: #ff5252;
+  --color-agro-warning: #ffb020;
+  --color-agro-muted: #7d93a3;
+  --color-agro-text: #e6f1ea;
+
+  --font-sans: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-card: 0 8px 30px -12px rgb(0 0 0 / 0.6);
+  --shadow-glow: 0 0 0 1px rgb(0 230 118 / 0.25), 0 10px 40px -12px rgb(0 230 118 / 0.25);
+}
+
+/* ---- LIGHT THEME (blanco roto + verde bosque) ---- */
+html.light {
+  --color-agro-bg: #f7f9f4;
+  --color-agro-surface: #ffffff;
+  --color-agro-card: #ffffff;
+  --color-agro-card-soft: #f0f4ec;
+  --color-agro-border: #dce5d6;
+  --color-agro-border-soft: #e8eee2;
+  --color-agro-accent: #2e7d32;
+  --color-agro-accent-dim: #256628;
+  --color-agro-danger: #d32f2f;
+  --color-agro-warning: #b7791f;
+  --color-agro-muted: #4a5b52;
+  --color-agro-text: #1a1a1a;
+
+  --shadow-card: 0 8px 24px -14px rgb(20 40 30 / 0.25);
+  --shadow-glow: 0 0 0 1px rgb(46 125 50 / 0.2), 0 10px 30px -14px rgb(46 125 50 / 0.3);
+
+  color-scheme: light;
+}
+
+html {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-agro-bg);
+    color: var(--color-agro-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* ---- Animated theme switch (only while toggling, reduced-motion safe) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-anim,
+  html.theme-anim *:not(.leaflet-pane *):not(.leaflet-control *) {
+    transition:
+      background-color 300ms ease,
+      border-color 300ms ease,
+      color 300ms ease,
+      fill 300ms ease,
+      stroke 300ms ease,
+      box-shadow 300ms ease !important;
+  }
+}
+
+/* ---- Scrollbar (theme-aware) ---- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-agro-border);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-agro-accent-dim);
+  background-clip: padding-box;
+}
+
+/* ---- Leaflet integration ---- */
+.leaflet-container {
+  background: var(--color-agro-bg);
+  font-family: var(--font-sans);
+  outline: none;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--color-agro-card) !important;
+  color: var(--color-agro-text) !important;
+  border: 1px solid var(--color-agro-border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--color-agro-card-soft) !important;
+  color: var(--color-agro-accent) !important;
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--color-agro-bg) 75%, transparent) !important;
+  color: var(--color-agro-muted) !important;
+  backdrop-filter: blur(6px);
+  font-size: 10px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--color-agro-accent-dim) !important;
+}
+
+.leaflet-tooltip.agro-tooltip {
+  background: var(--color-agro-card);
+  border: 1px solid var(--color-agro-border);
+  color: var(--color-agro-text);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.leaflet-tooltip.agro-tooltip::before {
+  display: none;
+}
+
+/* ---- Leaflet-geoman: tint vertex / edit markers with the accent ---- */
+.leaflet-pm-draggable {
+  cursor: grab;
+}
+.marker-icon.leaflet-pm-draggable,
+.marker-icon-middle.leaflet-pm-draggable {
+  border-color: var(--color-agro-accent) !important;
+  background: var(--color-agro-bg) !important;
+}
+
+/* ---- Animations ---- */
+@keyframes agro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: agro-rise 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
